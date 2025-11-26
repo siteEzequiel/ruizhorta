@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horta Inteligente - EMEF EZEQUIEL RUIZ</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      margin-top: 40px;
+      padding: 20px;
+      max-width: 420px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .logo {
+      margin-bottom: 10px;
+    }
+
+    .logo img {
+      max-width: 110px;
+      border-radius: 8px;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 6px;
+      font-size: 22px;
+    }
+
+    p.subtitulo {
+      margin-top: 0;
+      margin-bottom: 18px;
+      color: #7f8c8d;
+      font-size: 13px;
+    }
+
+    .info {
+      font-size: 20px;
+      margin: 12px 0;
+    }
+
+    .info span {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .status-bomba {
+      margin: 15px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .status-bomba span {
+      padding: 4px 10px;
+      border-radius: 999px;
+      color: #fff;
+    }
+
+    .status-bomba span.ligada {
+      background: #27ae60;
+    }
+
+    .status-bomba span.desligada {
+      background: #e74c3c;
+    }
+
+    .botoes {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, opacity 0.1s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: none;
+      opacity: 0.9;
+    }
+
+    .btn-ligar {
+      background: #27ae60;
+      color: #fff;
+      box-shadow: 0 3px 6px rgba(39, 174, 96, 0.4);
+    }
+
+    .btn-desligar {
+      background: #e74c3c;
+      color: #fff;
+      box-shadow: 0 3px 6px rgba(231, 76, 60, 0.4);
+    }
+
+    .btn-atualizar {
+      background: #3498db;
+      color: #fff;
+      box-shadow: 0 3px 6px rgba(52, 152, 219, 0.4);
+    }
+
+    .status-conexao {
+      margin-top: 15px;
+      font-size: 13px;
+      color: #7f8c8d;
+    }
+
+    .status-conexao span {
+      font-weight: bold;
+    }
+
+    .erro {
+      color: #c0392b;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 16px;
+    }
+
+    .rodape {
+      margin-top: 18px;
+      font-size: 11px;
+      color: #95a5a6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- LOGO DA ESCOLA -->
+    <div class="logo">
+      <img
+        src="logo/logo.JPEG to BASE64.jpeg"
+        alt="Logo da Escola EMEF Ezequiel Ruiz II"
+      />
+    </div>
+
+    <h1>Horta Inteligente da EMEF EZEQUIEL RUIZ</h1>
+    <p class="subtitulo">
+      Monitoramento de umidade e controle de irrigação via Wi-Fi
+    </p>
+
+    <div class="info">
+      Umidade do solo: <span id="umidade">--</span> %
+    </div>
+
+    <div class="status-bomba">
+      Bomba:
+      <span id="bombaStatus" class="desligada">Desconhecida</span>
+    </div>
+
+    <div class="botoes">
+      <button class="btn-ligar" onclick="ligarBomba()">Ligar bomba</button>
+      <button class="btn-desligar" onclick="desligarBomba()">Desligar bomba</button>
+      <button class="btn-atualizar" onclick="atualizarStatus()">Atualizar dados</button>
+    </div>
+
+    <div class="status-conexao">
+      Status da conexão:
+      <span id="statusConexao">Aguardando...</span>
+    </div>
+
+    <div id="erro" class="erro"></div>
+
+    <div class="rodape">
+      PROJETO HORTA INTELIGENTE · EMEF EZEQUIEL RUIZ · 2025
+    </div>
+  </div>
+
+  <script>
+    // ==============================
+    // CONFIGURAÇÃO DO IP DO ESP32
+    // ==============================
+    const BASE_URL = "http://192.168.4.2"; // TROCAR PELO IP CERTO
+
+    function setStatusConexao(texto) {
+      document.getElementById("statusConexao").textContent = texto;
+    }
+
+    function mostrarErro(msg) {
+      document.getElementById("erro").textContent = msg || "";
+    }
+
+    function atualizarStatusBomba(estado) {
+      const span = document.getElementById("bombaStatus");
+      if (estado === "LIGADA") {
+        span.textContent = "Ligada";
+        span.classList.remove("desligada");
+        span.classList.add("ligada");
+      } else if (estado === "DESLIGADA") {
+        span.textContent = "Desligada";
+        span.classList.remove("ligada");
+        span.classList.add("desligada");
+      } else {
+        span.textContent = "Desconhecida";
+        span.classList.remove("ligada", "desligada");
+      }
+    }
+
+    async function atualizarStatus() {
+      mostrarErro("");
+      setStatusConexao("Conectando...");
+      try {
+        const resp = await fetch(BASE_URL + "/status", { method: "GET" });
+        if (!resp.ok) {
+          throw new Error("HTTP " + resp.status);
+        }
+        const dados = await resp.json();
+        document.getElementById("umidade").textContent =
+          dados.umidade ?? "--";
+        atualizarStatusBomba(dados.bomba || "DESCONHECIDA");
+        setStatusConexao("Conectado");
+      } catch (e) {
+        console.error(e);
+        setStatusConexao("Falha na conexão");
+        mostrarErro(
+          "Não foi possível obter os dados da horta. Verifique o IP e se o ESP32 está ligado na mesma rede."
+        );
+      }
+    }
+
+    async function enviarComando(endpoint) {
+      mostrarErro("");
+      setStatusConexao("Enviando comando...");
+      try {
+        const resp = await fetch(BASE_URL + endpoint, { method: "GET" });
+        if (!resp.ok) {
+          throw new Error("HTTP " + resp.status);
+        }
+        setStatusConexao("Comando enviado");
+        setTimeout(atualizarStatus, 500);
+      } catch (e) {
+        console.error(e);
+        setStatusConexao("Falha na conexão");
+        mostrarErro(
+          "Não foi possível enviar o comando. Confira o IP do ESP32 e a rede."
+        );
+      }
+    }
+
+    function ligarBomba() {
+      enviarComando("/ligar");
+    }
+
+    function desligarBomba() {
+      enviarComando("/desligar");
+    }
+
+    window.addEventListener("load", atualizarStatus);
+  </script>
+</body>
+</html>
